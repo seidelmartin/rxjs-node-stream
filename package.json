@@ -1,0 +1,29 @@
+{
+  "name": "rxjs-node-stream",
+  "version": "0.1.0",
+  "description": "Set of utils which converts node readable streams from and to Rx.js",
+  "main": "index.js",
+  "scripts": {
+    "build": "rm -rf ./dist && tsc",
+    "test": "NODE_ENV=test mocha --opts mocha.opts",
+    "depcheck": "depcheck --ignores=@types/*,tslint*,pre-commit",
+    "coverage": "nyc mocha --opts mocha.opts"
+  },
+  "keywords": [
+    "rxjs",
+    "stream",
+    "node"
+  ],
+  "author": "Martin Seidel",
+  "license": "ISC",
+  "devDependencies": {
+    "mocha": "^5.2.0",
+    "nyc": "^13.1.0",
+    "pre-commit": "^1.2.2",
+    "source-map-support": "^0.5.9",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-config-standard": "^8.0.1",
+    "typescript": "^3.2.2"
+  }
+}
