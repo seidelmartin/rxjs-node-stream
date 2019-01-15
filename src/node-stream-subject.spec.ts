@@ -6,19 +6,14 @@ import * as assert from 'assert'
 
 describe('Node stream subject', () => {
   let sandbox: sinon.SinonSandbox
+  let sampleNodeStream: Readable
 
   before(() => {
     sandbox = sinon.createSandbox()
   })
 
-  afterEach(() => {
-    sandbox.verifyAndRestore()
-  })
-
-  it('should create Subject observable from node stream and publish all messages to subscriber', (done) => {
-    const nextSpy = sandbox.spy()
-
-    const stream = new Readable({
+  beforeEach(() => {
+    sampleNodeStream = new Readable({
       read () {
         let i = 0
         while (i++ < 1000) {
@@ -27,8 +22,15 @@ describe('Node stream subject', () => {
         this.push(null)
       }
     })
+  })
 
-    const stream$ = new NodeStreamSubject(stream)
+  afterEach(() => {
+    sandbox.verifyAndRestore()
+  })
+
+  it('should create Subject observable from node stream and publish all messages to subscriber', (done) => {
+    const nextSpy = sandbox.spy()
+    const stream$ = new NodeStreamSubject(sampleNodeStream)
 
     stream$
       .subscribe({
@@ -69,21 +71,11 @@ describe('Node stream subject', () => {
   })
 
   it('should allow to pause stream by registering backpressure observable', (done) => {
-    const stream = new Readable({
-      read () {
-        let i = 0
-        while (i++ < 1000) {
-          this.push(Buffer.from(i.toString()))
-        }
-        this.push(null)
-      }
-    })
-
     const nextSpyBeforePause = sandbox.spy()
     const nextSpyAfterPause = sandbox.spy()
-    const pausedSpy = sandbox.spy(() => stream.isPaused())
+    const pausedSpy = sandbox.spy(() => sampleNodeStream.isPaused())
 
-    const stream$ = new NodeStreamSubject(stream)
+    const stream$ = new NodeStreamSubject(sampleNodeStream)
     const backpressure$ = new BehaviorSubject<boolean>(true)
     stream$.registerBackpressure(backpressure$)
 
@@ -116,20 +108,10 @@ describe('Node stream subject', () => {
   })
 
   it('should allow multiple backpressure observables to be registered and if on of them says the stream should stop it stops', (done) => {
-    const stream = new Readable({
-      read () {
-        let i = 0
-        while (i++ < 1000) {
-          this.push(Buffer.from(i.toString()))
-        }
-        this.push(null)
-      }
-    })
-
     const nextSpy = sandbox.spy()
-    const pausedSpy = sandbox.spy(() => stream.isPaused())
+    const pausedSpy = sandbox.spy(() => sampleNodeStream.isPaused())
 
-    const stream$ = new NodeStreamSubject(stream)
+    const stream$ = new NodeStreamSubject(sampleNodeStream)
     const backpressure$ = new BehaviorSubject<boolean>(true)
     const backpressure2$ = new BehaviorSubject<boolean>(true)
     stream$.registerBackpressure(backpressure$)
@@ -169,6 +151,35 @@ describe('Node stream subject', () => {
           assert(pausedSpy.getCall(2).calledAfter(nextSpy.getCall(599)))
           assert(nextSpy.getCall(600).calledAfter(pausedSpy.getCall(2)))
           assert(pausedSpy.alwaysReturned(true))
+          done()
+        }
+      })
+  })
+
+  it('should automatically remove completed backpressure observables from list', (done) => {
+    const nextSpy = sandbox.spy()
+    const pausedSpy = sandbox.spy(() => sampleNodeStream.isPaused())
+
+    const stream$ = new NodeStreamSubject(sampleNodeStream)
+    const backpressure$ = new BehaviorSubject<boolean>(true)
+    stream$.registerBackpressure(backpressure$)
+
+    stream$
+      .subscribe({
+        next (value: Buffer) {
+          const index = Number(value.toString())
+          nextSpy()
+
+          if (index === 200) {
+            backpressure$.next(false)
+            setTimeout(() => backpressure$.complete(), 30)
+            setTimeout(pausedSpy, 10)
+          }
+        },
+        complete () {
+          sinon.assert.callCount(nextSpy, 1000)
+          assert(pausedSpy.getCall(0).calledAfter(nextSpy.getCall(199)))
+          assert(nextSpy.getCall(200).calledAfter(pausedSpy.getCall(0)))
           done()
         }
       })

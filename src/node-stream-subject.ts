@@ -1,7 +1,7 @@
 import { Readable } from 'stream'
 import { BehaviorSubject, combineLatest, Observable, Subject, Subscription } from 'rxjs'
 import { PartialObserver } from 'rxjs/src/internal/types'
-import { map, shareReplay } from 'rxjs/operators'
+import { map } from 'rxjs/operators'
 
 export class NodeStreamSubject<T = Buffer> extends Subject<T> {
   private defaultBackpressure$ = new BehaviorSubject(false)
@@ -36,13 +36,25 @@ export class NodeStreamSubject<T = Buffer> extends Subject<T> {
     ? this.readableStream.resume() : this.readableStream.pause()
 
   registerBackpressure (backpressure$: Observable<boolean>) {
-    this.backpressureObservables.push(backpressure$.pipe(shareReplay(1)))
+    const backpressureIndex = this.backpressureObservables.push(backpressure$)
+
+    backpressure$.subscribe({
+      complete: this.backpressureCompleteSubscriber(backpressureIndex)
+    })
+
     this.subscribeToBackpressureStreams()
   }
 
-  subscribe (observerOrNext?: PartialObserver<T> | ((value: T) => void),
+  private backpressureCompleteSubscriber = (backpressureIndex: number) => () => {
+    this.backpressureObservables.splice(backpressureIndex - 1, 1)
+    this.subscribeToBackpressureStreams()
+  }
+
+  subscribe (
+    observerOrNext?: PartialObserver<T> | ((value: T) => void),
     error?: (error: any) => void,
-    complete?: () => void): Subscription {
+    complete?: () => void
+  ): Subscription {
     // @ts-ignore fix typings
     const subscription = super.subscribe(observerOrNext, error, complete)
     setImmediate(() => this.defaultBackpressure$.next(true))
