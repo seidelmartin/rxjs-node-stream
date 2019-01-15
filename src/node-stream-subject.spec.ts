@@ -73,7 +73,7 @@ describe('Node stream subject', () => {
   it('should allow to pause stream by registering backpressure observable', (done) => {
     const nextSpyBeforePause = sandbox.spy()
     const nextSpyAfterPause = sandbox.spy()
-    const pausedSpy = sandbox.spy(() => sampleNodeStream.isPaused())
+    const pausedSpy = sandbox.spy(sampleNodeStream.isPaused)
 
     const stream$ = new NodeStreamSubject(sampleNodeStream)
     const backpressure$ = new BehaviorSubject<boolean>(true)
@@ -93,7 +93,7 @@ describe('Node stream subject', () => {
           if (index === 400) {
             backpressure$.next(false)
             setTimeout(() => backpressure$.next(true), 30)
-            setTimeout(pausedSpy, 10)
+            setTimeout(() => pausedSpy.call(sampleNodeStream), 10)
           }
         },
         complete () {
@@ -109,7 +109,7 @@ describe('Node stream subject', () => {
 
   it('should allow multiple backpressure observables to be registered and if on of them says the stream should stop it stops', (done) => {
     const nextSpy = sandbox.spy()
-    const pausedSpy = sandbox.spy(() => sampleNodeStream.isPaused())
+    const pausedSpy = sandbox.spy(sampleNodeStream.isPaused)
 
     const stream$ = new NodeStreamSubject(sampleNodeStream)
     const backpressure$ = new BehaviorSubject<boolean>(true)
@@ -126,20 +126,20 @@ describe('Node stream subject', () => {
           if (index === 200) {
             backpressure$.next(false)
             setTimeout(() => backpressure$.next(true), 30)
-            setTimeout(pausedSpy, 10)
+            setTimeout(() => pausedSpy.call(sampleNodeStream), 10)
           }
 
           if (index === 400) {
             backpressure2$.next(false)
             setTimeout(() => backpressure2$.next(true), 30)
-            setTimeout(pausedSpy, 10)
+            setTimeout(() => pausedSpy.call(sampleNodeStream), 10)
           }
 
           if (index === 600) {
             backpressure$.next(false)
             backpressure2$.next(false)
             setTimeout(() => (backpressure$.next(true), backpressure2$.next(true)), 30)
-            setTimeout(pausedSpy, 10)
+            setTimeout(() => pausedSpy.call(sampleNodeStream), 10)
           }
         },
         complete () {
@@ -158,7 +158,7 @@ describe('Node stream subject', () => {
 
   it('should automatically remove completed backpressure observables from list', (done) => {
     const nextSpy = sandbox.spy()
-    const pausedSpy = sandbox.spy(() => sampleNodeStream.isPaused())
+    const pausedSpy = sandbox.spy(sampleNodeStream.isPaused)
 
     const stream$ = new NodeStreamSubject(sampleNodeStream)
     const backpressure$ = new BehaviorSubject<boolean>(true)
@@ -173,7 +173,7 @@ describe('Node stream subject', () => {
           if (index === 200) {
             backpressure$.next(false)
             setTimeout(() => backpressure$.complete(), 30)
-            setTimeout(pausedSpy, 10)
+            setTimeout(() => pausedSpy.call(sampleNodeStream), 10)
           }
         },
         complete () {
