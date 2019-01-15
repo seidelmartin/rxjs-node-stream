@@ -1,6 +1,5 @@
 import { Readable } from 'stream'
-import { BehaviorSubject, combineLatest, Observable, Subject, Subscription } from 'rxjs'
-import { PartialObserver } from 'rxjs/src/internal/types'
+import { BehaviorSubject, combineLatest, Observable, Subject, Subscription, PartialObserver } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 export class NodeStreamSubject<T = Buffer> extends Subject<T> {
@@ -14,8 +13,8 @@ export class NodeStreamSubject<T = Buffer> extends Subject<T> {
 
     readableStream.on('data', (data: T) => this.next(data))
     readableStream.on('error', (err) => this.error(err))
-    readableStream.on('end', () => this.complete())
-    readableStream.on('close', () => this.complete())
+    readableStream.on('end', () => !this.closed && this.complete())
+    readableStream.on('close', () => !this.closed && this.complete())
 
     this.subscribeToBackpressureStreams()
   }
