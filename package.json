@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "rm -rf ./dist && tsc",
+    "prepack": "npm run build",
     "test": "NODE_ENV=test mocha --opts mocha.opts",
     "depcheck": "depcheck --ignores=@types/*,tslint*,pre-commit",
     "coverage": "nyc mocha --opts mocha.opts"
