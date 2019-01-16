@@ -1,0 +1,9 @@
+src
+.idea
+coverage
+.nyc_output
+tsconfig.json
+mocha.opts
+.nvmrc
+.travis.yml
+dist/**/*.map
