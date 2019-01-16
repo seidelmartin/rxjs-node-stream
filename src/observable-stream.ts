@@ -14,8 +14,13 @@ export class ObservableStream<T = Buffer> extends Readable {
       next: (flowing) => flowing ? this.resume() : this.pause()
     })
 
-    this.once('end', () => !this.backpressure$.closed && this.backpressure$.complete())
-    this.once('close', () => !this.backpressure$.closed && this.backpressure$.complete())
+    this.once('end', this.endHandler)
+    this.once('close', this.endHandler)
+  }
+
+  private endHandler = () => {
+    !this.backpressure$.closed && this.backpressure$.complete()
+    this.subscription && this.subscription.unsubscribe()
   }
 
   _read (): void {
