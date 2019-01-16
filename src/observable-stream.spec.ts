@@ -1,5 +1,5 @@
 import { range } from 'rxjs'
-import { map } from 'rxjs/operators'
+import { delay, map } from 'rxjs/operators'
 import { ObservableStream } from './observable-stream'
 import * as sinon from 'sinon'
 import * as assert from 'assert'
@@ -31,11 +31,14 @@ describe('Observable stream', () => {
     })
   })
 
-  it(`should put the values of observable to buffer in case the stream is paused`, (done) => {
+  it(`should put values of observable to buffer internal in case the stream is paused`, (done) => {
     const dataSpy = sandbox.spy()
 
     const range$ = range(0, 10)
-      .pipe(map((value) => Buffer.from(String(value))))
+      .pipe(
+        delay(10),
+        map((value) => Buffer.from(String(value)))
+      )
 
     const stream = new ObservableStream(range$)
 
@@ -52,7 +55,7 @@ describe('Observable stream', () => {
     })
     stream.on('end', () => {
       sinon.assert.callCount(dataSpy, 10)
-      assert(dataSpy.getCall(6).calledAfter(pausedSpy.getCall(0)))
+      assert(dataSpy.getCall(5).calledAfter(pausedSpy.getCall(0)))
       done()
     })
   })

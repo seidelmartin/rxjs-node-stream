@@ -4,7 +4,7 @@ import { BehaviorSubject, Observable, Subscription } from 'rxjs'
 export class ObservableStream<T = Buffer> extends Readable {
 
   private subscription?: Subscription
-  private buffer: T[] = []
+  private buffer: T[] & [null?] = []
   public readonly backpressure$ = new BehaviorSubject<boolean>(true)
 
   constructor (private stream$: Observable<T>, opts?: ReadableOptions) {
@@ -17,21 +17,19 @@ export class ObservableStream<T = Buffer> extends Readable {
 
   _read (): void {
     if (!this.subscription) {
-      this.stream$.subscribe({
+      this.subscription = this.stream$.subscribe({
         next: this.subscriptionNext,
         error: (err) => this.emit('error', err),
         complete: () => {
           this.backpressure$.complete()
-          this.push(null)
+          this.buffer.length ? this.buffer.push(null) : this.push(null)
         }
       })
       return
     }
 
-    if (this.buffer.length) {
-      while (this.buffer.length && !this.isPaused()) {
-        setImmediate(() => this.push(this.buffer.shift()))
-      }
+    while (this.buffer.length) {
+      this.push(this.buffer.shift())
     }
   }
 
