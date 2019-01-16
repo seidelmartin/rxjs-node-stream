@@ -59,4 +59,33 @@ describe('Observable stream', () => {
       done()
     })
   })
+
+  it(`should pause stream if internal backpressure subject is set to false`, (done) => {
+    const dataSpy = sandbox.spy()
+
+    const range$ = range(0, 10)
+      .pipe(
+        delay(10),
+        map((value) => Buffer.from(String(value)))
+      )
+
+    const stream = new ObservableStream(range$)
+
+    const pausedSpy = sandbox.spy(stream, 'isPaused')
+
+    stream.on('data', (value: Buffer) => {
+      dataSpy(value)
+
+      if (value.toString() === '5') {
+        stream.backpressure$.next(false)
+        setTimeout(() => stream.backpressure$.next(true), 30)
+        setTimeout(() => pausedSpy.call(stream), 10)
+      }
+    })
+    stream.on('end', () => {
+      sinon.assert.callCount(dataSpy, 10)
+      assert(dataSpy.getCall(5).calledAfter(pausedSpy.getCall(0)))
+      done()
+    })
+  })
 })

@@ -13,6 +13,9 @@ export class ObservableStream<T = Buffer> extends Readable {
     this.backpressure$.subscribe({
       next: (flowing) => flowing ? this.resume() : this.pause()
     })
+
+    this.once('end', () => !this.backpressure$.closed && this.backpressure$.complete())
+    this.once('close', () => !this.backpressure$.closed && this.backpressure$.complete())
   }
 
   _read (): void {
@@ -21,7 +24,6 @@ export class ObservableStream<T = Buffer> extends Readable {
         next: this.subscriptionNext,
         error: (err) => this.emit('error', err),
         complete: () => {
-          this.backpressure$.complete()
           this.buffer.length ? this.buffer.push(null) : this.push(null)
         }
       })
