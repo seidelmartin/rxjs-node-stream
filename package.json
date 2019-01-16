@@ -1,8 +1,9 @@
 {
   "name": "rxjs-node-stream",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Set of utils which converts node readable streams from and to Rx.js",
   "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
     "url": "https://github.com/seidelmartin/rxjs-node-stream"
